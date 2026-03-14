@@ -14,6 +14,7 @@ margin:0;
 background:#141414;
 color:white;
 font-family:Arial;
+overflow-x:hidden;
 }
 
 /* LOADER */
@@ -57,7 +58,6 @@ padding:15px;
 display:flex;
 gap:15px;
 align-items:center;
-flex-wrap:wrap;
 }
 
 .logo{
@@ -66,8 +66,6 @@ font-size:26px;
 font-weight:bold;
 cursor:pointer;
 }
-
-/* SEARCH */
 
 input{
 padding:8px;
@@ -78,7 +76,7 @@ border-radius:4px;
 /* FEATURED */
 
 #featured{
-min-height:350px;
+height:420px;
 background-size:cover;
 background-position:center;
 display:flex;
@@ -93,76 +91,78 @@ border-radius:6px;
 max-width:400px;
 }
 
-/* GRID */
+.readBtn{
+background:#e50914;
+border:none;
+color:white;
+padding:8px 14px;
+cursor:pointer;
+margin-top:10px;
+}
 
-#results,#searchResults{
-display:flex;
-flex-wrap:wrap;
-gap:20px;
+/* SHELVES */
+
+.shelf{
 padding:20px;
-justify-content:center;
+}
+
+.row{
+display:flex;
+overflow-x:auto;
+gap:15px;
+padding-top:10px;
+}
+
+.row::-webkit-scrollbar{
+display:none;
 }
 
 /* BOOK CARD */
 
 .book{
-width:150px;
-position:relative;
+min-width:150px;
 cursor:pointer;
-transition:transform 0.3s;
+transition:transform .3s;
+position:relative;
 }
 
 .book img{
-width:100%;
+width:150px;
 border-radius:6px;
 }
 
 .book:hover{
 transform:scale(1.15);
-z-index:10;
-}
-
-/* BADGE */
-
-.badge{
-position:absolute;
-top:6px;
-left:6px;
-padding:3px 6px;
-font-size:11px;
-border-radius:4px;
-font-weight:bold;
-background:#2ecc71;
-color:black;
+z-index:5;
 }
 
 /* HOVER CARD */
 
 .hoverCard{
 position:absolute;
+bottom:-10px;
 left:-10px;
 right:-10px;
-bottom:-10px;
 background:#181818;
-padding:12px;
-border-radius:6px;
+padding:10px;
 opacity:0;
-transition:0.3s;
-box-shadow:0 10px 30px rgba(0,0,0,0.8);
+transition:.3s;
+border-radius:6px;
 }
 
 .book:hover .hoverCard{
 opacity:1;
 }
 
-.readBtn{
-background:#e50914;
-border:none;
-color:white;
-padding:6px 12px;
-margin-top:6px;
-cursor:pointer;
-border-radius:3px;
+.badge{
+position:absolute;
+top:5px;
+left:5px;
+background:#2ecc71;
+color:black;
+font-size:11px;
+padding:3px 6px;
+border-radius:4px;
 }
 
 /* READER */
@@ -192,6 +192,16 @@ padding:12px;
 cursor:pointer;
 }
 
+/* SEARCH RESULTS */
+
+#searchResults{
+display:flex;
+flex-wrap:wrap;
+gap:20px;
+padding:20px;
+justify-content:center;
+}
+
 /* FOOTER */
 
 footer{
@@ -204,11 +214,7 @@ font-size:12px;
 /* MOBILE */
 
 @media (max-width:700px){
-.book{width:40%;}
-}
-
-@media (max-width:450px){
-.book{width:80%;}
+.book img{width:120px;}
 }
 
 </style>
@@ -238,17 +244,15 @@ font-size:12px;
 
 <p id="featuredAuthor"></p>
 
-<button onclick="readFeatured()">READ</button>
+<button class="readBtn" onclick="readFeatured()">READ</button>
 
 </div>
 
 </div>
 
-<h2 style="padding-left:20px;">Search Results</h2>
 <div id="searchResults"></div>
 
-<h2 style="padding-left:20px;">Library</h2>
-<div id="results"></div>
+<div id="shelves"></div>
 
 <div id="reader">
 
@@ -264,63 +268,55 @@ made by liam rodriguez
 
 <script>
 
-/* BOOKFLIX LIBRARY (GUTENBERG) */
+/* BOOK DATABASE */
 
-const books=[
+const shelves={
 
-{
-title:"Dracula",
-author:"Bram Stoker",
-cover:"https://covers.openlibrary.org/b/id/8231996-L.jpg",
-url:"https://www.gutenberg.org/files/345/345-h/345-h.htm"
-},
+Trending:[
+{title:"Dracula",author:"Bram Stoker",cover:"https://covers.openlibrary.org/b/id/8231996-L.jpg",url:"https://www.gutenberg.org/files/345/345-h/345-h.htm"},
+{title:"Frankenstein",author:"Mary Shelley",cover:"https://covers.openlibrary.org/b/id/8231856-L.jpg",url:"https://www.gutenberg.org/files/84/84-h/84-h.htm"}
+],
 
-{
-title:"Frankenstein",
-author:"Mary Shelley",
-cover:"https://covers.openlibrary.org/b/id/8231856-L.jpg",
-url:"https://www.gutenberg.org/files/84/84-h/84-h.htm"
-},
+Adventure:[
+{title:"Treasure Island",author:"R.L Stevenson",cover:"https://covers.openlibrary.org/b/id/8231980-L.jpg",url:"https://www.gutenberg.org/files/120/120-h/120-h.htm"},
+{title:"White Fang",author:"Jack London",cover:"https://covers.openlibrary.org/b/id/8226191-L.jpg",url:"https://www.gutenberg.org/files/910/910-h/910-h.htm"}
+],
 
-{
-title:"Treasure Island",
-author:"Robert Louis Stevenson",
-cover:"https://covers.openlibrary.org/b/id/8231980-L.jpg",
-url:"https://www.gutenberg.org/files/120/120-h/120-h.htm"
-},
+Mystery:[
+{title:"Sherlock Holmes",author:"Arthur Conan Doyle",cover:"https://covers.openlibrary.org/b/id/8221256-L.jpg",url:"https://www.gutenberg.org/files/1661/1661-h/1661-h.htm"}
+],
 
-{
-title:"White Fang",
-author:"Jack London",
-cover:"https://covers.openlibrary.org/b/id/8226191-L.jpg",
-url:"https://www.gutenberg.org/files/910/910-h/910-h.htm"
-},
-
-{
-title:"Sherlock Holmes",
-author:"Arthur Conan Doyle",
-cover:"https://covers.openlibrary.org/b/id/8221256-L.jpg",
-url:"https://www.gutenberg.org/files/1661/1661-h/1661-h.htm"
-},
-
-{
-title:"Alice in Wonderland",
-author:"Lewis Carroll",
-cover:"https://covers.openlibrary.org/b/id/8228691-L.jpg",
-url:"https://www.gutenberg.org/files/11/11-h/11-h.htm"
-}
-
+Fantasy:[
+{title:"Alice in Wonderland",author:"Lewis Carroll",cover:"https://covers.openlibrary.org/b/id/8228691-L.jpg",url:"https://www.gutenberg.org/files/11/11-h/11-h.htm"}
 ]
 
-let featuredBook=books[0];
+}
+
+/* FEATURED */
+
+let featuredBook=shelves.Trending[0]
+
+function loadFeatured(){
+
+document.getElementById("featured").style.backgroundImage="url("+featuredBook.cover+")"
+
+document.getElementById("featuredTitle").innerText=featuredBook.title
+
+document.getElementById("featuredAuthor").innerText=featuredBook.author
+
+}
+
+function readFeatured(){
+openReader(featuredBook.url)
+}
 
 /* CREATE BOOK */
 
-function createBook(book,parent){
+function createBook(book){
 
-let div=document.createElement("div");
+let div=document.createElement("div")
 
-div.className="book";
+div.className="book"
 
 div.innerHTML=`
 
@@ -338,48 +334,51 @@ ${book.author}<br>
 
 </div>
 
-`;
+`
 
 div.querySelector(".readBtn").onclick=(e)=>{
 
-e.stopPropagation();
+e.stopPropagation()
 
-openReader(book.url);
-
-};
-
-parent.appendChild(div);
+openReader(book.url)
 
 }
 
-/* LOAD LIBRARY */
-
-function loadLibrary(){
-
-let results=document.getElementById("results");
-
-results.innerHTML="";
-
-books.forEach(book=>createBook(book,results));
+return div
 
 }
 
-/* FEATURED */
+/* LOAD SHELVES */
 
-function loadFeatured(){
+function loadShelves(){
 
-document.getElementById("featured").style.backgroundImage=
-"url("+featuredBook.cover+")";
+let container=document.getElementById("shelves")
 
-document.getElementById("featuredTitle").innerText=featuredBook.title;
+container.innerHTML=""
 
-document.getElementById("featuredAuthor").innerText=featuredBook.author;
+for(let category in shelves){
+
+let shelf=document.createElement("div")
+
+shelf.className="shelf"
+
+shelf.innerHTML="<h2>"+category+"</h2>"
+
+let row=document.createElement("div")
+
+row.className="row"
+
+shelves[category].forEach(book=>{
+
+row.appendChild(createBook(book))
+
+})
+
+shelf.appendChild(row)
+
+container.appendChild(shelf)
 
 }
-
-function readFeatured(){
-
-openReader(featuredBook.url);
 
 }
 
@@ -387,17 +386,27 @@ openReader(featuredBook.url);
 
 function searchBooks(){
 
-let query=document.getElementById("searchBox").value.toLowerCase();
+let query=document.getElementById("searchBox").value.toLowerCase()
 
-let results=document.getElementById("searchResults");
+let results=document.getElementById("searchResults")
 
-results.innerHTML="";
+results.innerHTML=""
 
-books
-.filter(book=>book.title.toLowerCase().includes(query))
-.forEach(book=>createBook(book,results));
+for(let category in shelves){
 
-document.getElementById("featured").style.display="none";
+shelves[category].forEach(book=>{
+
+if(book.title.toLowerCase().includes(query)){
+
+results.appendChild(createBook(book))
+
+}
+
+})
+
+}
+
+document.getElementById("featured").style.display="none"
 
 }
 
@@ -405,17 +414,17 @@ document.getElementById("featured").style.display="none";
 
 function openReader(url){
 
-document.getElementById("reader").style.display="flex";
+document.getElementById("reader").style.display="flex"
 
-document.getElementById("readerFrame").src=url;
+document.getElementById("readerFrame").src=url
 
 }
 
 function closeReader(){
 
-document.getElementById("reader").style.display="none";
+document.getElementById("reader").style.display="none"
 
-document.getElementById("readerFrame").src="";
+document.getElementById("readerFrame").src=""
 
 }
 
@@ -423,9 +432,9 @@ document.getElementById("readerFrame").src="";
 
 function goHome(){
 
-document.getElementById("featured").style.display="flex";
+document.getElementById("featured").style.display="flex"
 
-document.getElementById("searchResults").innerHTML="";
+document.getElementById("searchResults").innerHTML=""
 
 }
 
@@ -433,27 +442,24 @@ document.getElementById("searchResults").innerHTML="";
 
 document.getElementById("searchBox").addEventListener("keypress",function(e){
 
-if(e.key==="Enter"){searchBooks();}
+if(e.key==="Enter") searchBooks()
 
-});
+})
 
 /* START */
 
-loadLibrary();
+loadFeatured()
 
-loadFeatured();
-
-/* LOADER */
+loadShelves()
 
 setTimeout(()=>{
 
-document.getElementById("loader").classList.add("hide");
+document.getElementById("loader").classList.add("hide")
 
-},1500);
+},1500)
 
 </script>
 
 </body>
 
 </html>
-
