@@ -291,7 +291,7 @@ let author = book.author_name ? book.author_name[0] : "Unknown";
 
 let edition = book.edition_key ? book.edition_key[0] : null;
 
-let available = book.edition_key && book.has_fulltext;
+let available = edition != null;
 
 let badge = available
 ? '<div class="badge available">AVAILABLE</div>'
@@ -314,10 +314,10 @@ div.querySelector(".readBtn").onclick=(e)=>{
 
 e.stopPropagation();
 
-if(available){
+if(edition){
 openReader(edition);
 }else{
-alert("This book cannot be read online.");
+alert("Reader not available for this edition.");
 }
 
 };
@@ -330,11 +330,13 @@ parent.appendChild(div);
 
 async function loadFeatured(){
 
-let res=await fetch("https://openlibrary.org/search.json?q=fantasy&has_fulltext=true");
+let res=await fetch("https://openlibrary.org/search.json?q=fantasy");
 
 let data=await res.json();
 
 let book=data.docs[0];
+
+if(!book) return;
 
 let cover="https://covers.openlibrary.org/b/id/"+book.cover_i+"-L.jpg";
 
@@ -345,12 +347,16 @@ document.getElementById("featuredTitle").innerText=book.title;
 document.getElementById("featuredAuthor").innerText=
 book.author_name ? book.author_name[0] : "Unknown";
 
-featuredBookKey = book.edition_key[0];
+featuredBookKey = book.edition_key ? book.edition_key[0] : null;
 
 }
 
 function readFeatured(){
+
+if(featuredBookKey){
 openReader(featuredBookKey);
+}
+
 }
 
 /* SEARCH */
@@ -363,7 +369,7 @@ let query=document.getElementById("searchBox").value;
 
 if(query===""){query="fantasy";}
 
-let res=await fetch("https://openlibrary.org/search.json?q="+encodeURIComponent(query)+"&has_fulltext=true");
+let res=await fetch("https://openlibrary.org/search.json?q="+encodeURIComponent(query));
 
 let data=await res.json();
 
@@ -381,7 +387,7 @@ createBook(book,results);
 
 async function loadRecommendations(){
 
-let res=await fetch("https://openlibrary.org/search.json?q=classic&has_fulltext=true");
+let res=await fetch("https://openlibrary.org/search.json?q=classic");
 
 let data=await res.json();
 
@@ -418,7 +424,6 @@ document.getElementById("readerFrame").src="";
 function goHome(){
 
 document.getElementById("featured").style.display="flex";
-
 document.getElementById("searchResults").innerHTML="";
 
 }
@@ -446,4 +451,3 @@ document.getElementById("loader").classList.add("hide");
 
 </body>
 </html>
-
