@@ -14,7 +14,6 @@ margin:0;
 background:#141414;
 color:white;
 font-family:Arial;
-overflow-x:hidden;
 }
 
 /* LOADER */
@@ -27,6 +26,7 @@ width:100%;
 height:100%;
 background:black;
 display:flex;
+flex-direction:column;
 justify-content:center;
 align-items:center;
 z-index:9999;
@@ -39,10 +39,15 @@ pointer-events:none;
 }
 
 .loaderB{
-font-size:140px;
+font-size:150px;
 color:#e50914;
 font-weight:bold;
 animation:glow 1.5s infinite alternate;
+}
+
+.loaderText{
+letter-spacing:6px;
+margin-top:10px;
 }
 
 @keyframes glow{
@@ -58,6 +63,7 @@ padding:15px;
 display:flex;
 gap:15px;
 align-items:center;
+flex-wrap:wrap;
 }
 
 .logo{
@@ -66,6 +72,8 @@ font-size:26px;
 font-weight:bold;
 cursor:pointer;
 }
+
+/* SEARCH */
 
 input{
 padding:8px;
@@ -76,7 +84,7 @@ border-radius:4px;
 /* FEATURED */
 
 #featured{
-height:420px;
+min-height:350px;
 background-size:cover;
 background-position:center;
 display:flex;
@@ -91,78 +99,85 @@ border-radius:6px;
 max-width:400px;
 }
 
-.readBtn{
-background:#e50914;
-border:none;
-color:white;
-padding:8px 14px;
-cursor:pointer;
-margin-top:10px;
-}
+/* GRID */
 
-/* SHELVES */
-
-.shelf{
-padding:20px;
-}
-
-.row{
+#results,#searchResults{
 display:flex;
-overflow-x:auto;
-gap:15px;
-padding-top:10px;
-}
-
-.row::-webkit-scrollbar{
-display:none;
+flex-wrap:wrap;
+gap:20px;
+padding:20px;
+justify-content:center;
 }
 
 /* BOOK CARD */
 
 .book{
-min-width:150px;
-cursor:pointer;
-transition:transform .3s;
+width:150px;
 position:relative;
+cursor:pointer;
+transition:transform 0.3s;
 }
 
 .book img{
-width:150px;
+width:100%;
 border-radius:6px;
 }
 
 .book:hover{
 transform:scale(1.15);
-z-index:5;
+z-index:10;
+}
+
+/* BADGES */
+
+.badge{
+position:absolute;
+top:6px;
+left:6px;
+padding:3px 6px;
+font-size:11px;
+border-radius:4px;
+font-weight:bold;
+z-index:20;
+}
+
+.available{
+background:#2ecc71;
+color:black;
+}
+
+.unavailable{
+background:#e50914;
+color:white;
 }
 
 /* HOVER CARD */
 
 .hoverCard{
 position:absolute;
-bottom:-10px;
 left:-10px;
 right:-10px;
+bottom:-10px;
 background:#181818;
-padding:10px;
-opacity:0;
-transition:.3s;
+padding:12px;
 border-radius:6px;
+opacity:0;
+transition:0.3s;
+box-shadow:0 10px 30px rgba(0,0,0,0.8);
 }
 
 .book:hover .hoverCard{
 opacity:1;
 }
 
-.badge{
-position:absolute;
-top:5px;
-left:5px;
-background:#2ecc71;
-color:black;
-font-size:11px;
-padding:3px 6px;
-border-radius:4px;
+.readBtn{
+background:#e50914;
+border:none;
+color:white;
+padding:6px 12px;
+margin-top:6px;
+cursor:pointer;
+border-radius:3px;
 }
 
 /* READER */
@@ -192,16 +207,6 @@ padding:12px;
 cursor:pointer;
 }
 
-/* SEARCH RESULTS */
-
-#searchResults{
-display:flex;
-flex-wrap:wrap;
-gap:20px;
-padding:20px;
-justify-content:center;
-}
-
 /* FOOTER */
 
 footer{
@@ -214,7 +219,16 @@ font-size:12px;
 /* MOBILE */
 
 @media (max-width:700px){
-.book img{width:120px;}
+.book{width:40%;}
+#featured{padding:20px;}
+}
+
+@media (max-width:450px){
+.book{width:80%;}
+.navbar{
+flex-direction:column;
+align-items:flex-start;
+}
 }
 
 </style>
@@ -224,39 +238,40 @@ font-size:12px;
 
 <div id="loader">
 <div class="loaderB">B</div>
+<div class="loaderText">BOOKFLIX</div>
 </div>
 
 <div class="navbar">
 
 <div class="logo" onclick="goHome()">BOOKFLIX</div>
 
-<input id="searchBox" placeholder="Search books">
+<input id="searchBox" placeholder="Search books...">
 
 <button onclick="searchBooks()">Search</button>
 
 </div>
 
 <div id="featured">
-
 <div id="featuredInfo">
 
 <h1 id="featuredTitle"></h1>
 
 <p id="featuredAuthor"></p>
 
-<button class="readBtn" onclick="readFeatured()">READ</button>
+<button onclick="readFeatured()">READ</button>
 
 </div>
-
 </div>
 
+<h2 style="padding-left:20px;">Search Results</h2>
 <div id="searchResults"></div>
 
-<div id="shelves"></div>
+<h2 style="padding-left:20px;">More Like This</h2>
+<div id="results"></div>
 
 <div id="reader">
 
-<button id="closeReader" onclick="closeReader()">Close</button>
+<button id="closeReader" onclick="closeReader()">Close Reader</button>
 
 <iframe id="readerFrame"></iframe>
 
@@ -268,163 +283,152 @@ made by liam rodriguez
 
 <script>
 
-/* BOOK DATABASE */
+let featuredIA="";
 
-const shelves={
+/* CREATE BOOK */
 
-Trending:[
-{title:"Dracula",author:"Bram Stoker",cover:"https://covers.openlibrary.org/b/id/8231996-L.jpg",url:"https://www.gutenberg.org/files/345/345-h/345-h.htm"},
-{title:"Frankenstein",author:"Mary Shelley",cover:"https://covers.openlibrary.org/b/id/8231856-L.jpg",url:"https://www.gutenberg.org/files/84/84-h/84-h.htm"}
-],
+function createBook(book,parent){
 
-Adventure:[
-{title:"Treasure Island",author:"R.L Stevenson",cover:"https://covers.openlibrary.org/b/id/8231980-L.jpg",url:"https://www.gutenberg.org/files/120/120-h/120-h.htm"},
-{title:"White Fang",author:"Jack London",cover:"https://covers.openlibrary.org/b/id/8226191-L.jpg",url:"https://www.gutenberg.org/files/910/910-h/910-h.htm"}
-],
+let cover = book.cover_i
+? "https://covers.openlibrary.org/b/id/"+book.cover_i+"-M.jpg"
+: "https://via.placeholder.com/150x220?text=Book";
 
-Mystery:[
-{title:"Sherlock Holmes",author:"Arthur Conan Doyle",cover:"https://covers.openlibrary.org/b/id/8221256-L.jpg",url:"https://www.gutenberg.org/files/1661/1661-h/1661-h.htm"}
-],
+let author = book.author_name ? book.author_name[0] : "Unknown";
 
-Fantasy:[
-{title:"Alice in Wonderland",author:"Lewis Carroll",cover:"https://covers.openlibrary.org/b/id/8228691-L.jpg",url:"https://www.gutenberg.org/files/11/11-h/11-h.htm"}
-]
+let ia = book.ia ? book.ia[0] : null;
+
+/* NEW AVAILABILITY CHECK */
+
+let available = ia && book.lending_edition_s;
+
+let badge = available
+? '<div class="badge available">AVAILABLE</div>'
+: '<div class="badge unavailable">UNAVAILABLE</div>';
+
+let div=document.createElement("div");
+div.className="book";
+
+div.innerHTML=`
+${badge}
+<img src="${cover}">
+<div class="hoverCard">
+<b>${book.title}</b><br>
+${author}<br>
+<button class="readBtn">READ</button>
+</div>
+`;
+
+div.querySelector(".readBtn").onclick=(e)=>{
+
+e.stopPropagation();
+
+if(available){
+openReader(ia);
+}else{
+alert("This book cannot be read online.");
+}
+
+};
+
+parent.appendChild(div);
 
 }
 
 /* FEATURED */
 
-let featuredBook=shelves.Trending[0]
+async function loadFeatured(){
 
-function loadFeatured(){
+let res=await fetch("https://openlibrary.org/search.json?q=fantasy&has_fulltext=true");
 
-document.getElementById("featured").style.backgroundImage="url("+featuredBook.cover+")"
+let data=await res.json();
 
-document.getElementById("featuredTitle").innerText=featuredBook.title
+let book=data.docs.find(b=>b.ia && b.lending_edition_s);
 
-document.getElementById("featuredAuthor").innerText=featuredBook.author
+if(!book)return;
+
+let cover="https://covers.openlibrary.org/b/id/"+book.cover_i+"-L.jpg";
+
+document.getElementById("featured").style.backgroundImage="url("+cover+")";
+
+document.getElementById("featuredTitle").innerText=book.title;
+
+document.getElementById("featuredAuthor").innerText=
+book.author_name ? book.author_name[0] : "Unknown";
+
+featuredIA = book.ia[0];
 
 }
 
 function readFeatured(){
-openReader(featuredBook.url)
-}
 
-/* CREATE BOOK */
-
-function createBook(book){
-
-let div=document.createElement("div")
-
-div.className="book"
-
-div.innerHTML=`
-
-<div class="badge">AVAILABLE</div>
-
-<img src="${book.cover}">
-
-<div class="hoverCard">
-
-<b>${book.title}</b><br>
-
-${book.author}<br>
-
-<button class="readBtn">READ</button>
-
-</div>
-
-`
-
-div.querySelector(".readBtn").onclick=(e)=>{
-
-e.stopPropagation()
-
-openReader(book.url)
-
-}
-
-return div
-
-}
-
-/* LOAD SHELVES */
-
-function loadShelves(){
-
-let container=document.getElementById("shelves")
-
-container.innerHTML=""
-
-for(let category in shelves){
-
-let shelf=document.createElement("div")
-
-shelf.className="shelf"
-
-shelf.innerHTML="<h2>"+category+"</h2>"
-
-let row=document.createElement("div")
-
-row.className="row"
-
-shelves[category].forEach(book=>{
-
-row.appendChild(createBook(book))
-
-})
-
-shelf.appendChild(row)
-
-container.appendChild(shelf)
-
+if(featuredIA){
+openReader(featuredIA);
 }
 
 }
 
 /* SEARCH */
 
-function searchBooks(){
+async function searchBooks(){
 
-let query=document.getElementById("searchBox").value.toLowerCase()
+document.getElementById("featured").style.display="none";
 
-let results=document.getElementById("searchResults")
+let query=document.getElementById("searchBox").value;
 
-results.innerHTML=""
+if(query===""){query="books";}
 
-for(let category in shelves){
+let res=await fetch(
+"https://openlibrary.org/search.json?q="+encodeURIComponent(query)+"&has_fulltext=true"
+);
 
-shelves[category].forEach(book=>{
+let data=await res.json();
 
-if(book.title.toLowerCase().includes(query)){
+let results=document.getElementById("searchResults");
 
-results.appendChild(createBook(book))
+results.innerHTML="";
+
+data.docs.slice(0,20).forEach(book=>{
+createBook(book,results);
+});
 
 }
 
-})
+/* RECOMMENDATIONS */
 
-}
+async function loadRecommendations(){
 
-document.getElementById("featured").style.display="none"
+let res=await fetch(
+"https://openlibrary.org/search.json?q=classic&has_fulltext=true"
+);
+
+let data=await res.json();
+
+let results=document.getElementById("results");
+
+results.innerHTML="";
+
+data.docs.slice(0,20).forEach(book=>{
+createBook(book,results);
+});
 
 }
 
 /* READER */
 
-function openReader(url){
+function openReader(ia){
 
-document.getElementById("reader").style.display="flex"
+document.getElementById("reader").style.display="flex";
 
-document.getElementById("readerFrame").src=url
+document.getElementById("readerFrame").src=
+"https://archive.org/details/"+ia+"/page/n1/mode/2up";
 
 }
 
 function closeReader(){
 
-document.getElementById("reader").style.display="none"
+document.getElementById("reader").style.display="none";
 
-document.getElementById("readerFrame").src=""
+document.getElementById("readerFrame").src="";
 
 }
 
@@ -432,34 +436,36 @@ document.getElementById("readerFrame").src=""
 
 function goHome(){
 
-document.getElementById("featured").style.display="flex"
+document.getElementById("featured").style.display="flex";
 
-document.getElementById("searchResults").innerHTML=""
+document.getElementById("searchResults").innerHTML="";
 
 }
 
-/* ENTER SEARCH */
+/* ENTER KEY SEARCH */
 
 document.getElementById("searchBox").addEventListener("keypress",function(e){
 
-if(e.key==="Enter") searchBooks()
+if(e.key==="Enter"){
+searchBooks();
+}
 
-})
+});
 
-/* START */
+/* LOAD PAGE */
 
-loadFeatured()
+loadFeatured();
+loadRecommendations();
 
-loadShelves()
+/* LOADER */
 
 setTimeout(()=>{
-
-document.getElementById("loader").classList.add("hide")
-
-},1500)
+document.getElementById("loader").classList.add("hide");
+},1500);
 
 </script>
 
 </body>
 
 </html>
+
