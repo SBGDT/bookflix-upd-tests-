@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 
@@ -284,11 +283,11 @@ let cover = book.cover_i
 
 let author = book.author_name ? book.author_name[0] : "Unknown";
 
-/* availability logic */
-
-let available = book.edition_count && book.edition_count > 0;
-
 let edition = book.edition_key ? book.edition_key[0] : null;
+
+/* availability using ebook_access */
+
+let available = book.ebook_access !== "no_ebook";
 
 let badge = available
 ? '<div class="badge available">AVAILABLE</div>'
