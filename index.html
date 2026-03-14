@@ -1,34 +1,279 @@
 
-/* ------------------------------
-   GUTENBERG BOOK DATABASE
---------------------------------*/
+<!DOCTYPE html>
+<html>
 
-const gutenbergBooks = {
+<head>
+<title>BOOKFLIX</title>
 
-"moby dick":"https://www.gutenberg.org/files/2701/2701-h/2701-h.htm",
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-"frankenstein":"https://www.gutenberg.org/files/84/84-h/84-h.htm",
+<style>
 
-"sherlock holmes":"https://www.gutenberg.org/files/1661/1661-h/1661-h.htm",
+body{
+margin:0;
+background:#141414;
+color:white;
+font-family:Arial;
+}
 
-"alice":"https://www.gutenberg.org/files/11/11-h/11-h.htm",
+/* LOADER */
 
-"dracula":"https://www.gutenberg.org/files/345/345-h/345-h.htm",
+#loader{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:black;
+display:flex;
+justify-content:center;
+align-items:center;
+z-index:9999;
+transition:opacity 1s;
+}
 
-"treasure island":"https://www.gutenberg.org/files/120/120-h/120-h.htm",
+#loader.hide{
+opacity:0;
+pointer-events:none;
+}
 
-"pride and prejudice":"https://www.gutenberg.org/files/1342/1342-h/1342-h.htm",
+.loaderB{
+font-size:150px;
+color:#e50914;
+font-weight:bold;
+animation:glow 1.5s infinite alternate;
+}
 
-"the time machine":"https://www.gutenberg.org/files/35/35-h/35-h.htm"
+@keyframes glow{
+from{transform:scale(1);}
+to{transform:scale(1.2);}
+}
 
-};
+/* NAVBAR */
+
+.navbar{
+background:black;
+padding:15px;
+display:flex;
+gap:15px;
+align-items:center;
+flex-wrap:wrap;
+}
+
+.logo{
+color:#e50914;
+font-size:26px;
+font-weight:bold;
+cursor:pointer;
+}
+
+input{
+padding:8px;
+border:none;
+border-radius:4px;
+}
+
+/* FEATURED */
+
+#featured{
+min-height:350px;
+background-size:cover;
+background-position:center;
+display:flex;
+align-items:center;
+padding:40px;
+}
+
+#featuredInfo{
+background:rgba(0,0,0,0.6);
+padding:20px;
+border-radius:6px;
+max-width:400px;
+}
+
+/* BOOK GRID */
+
+#results,#searchResults{
+display:flex;
+flex-wrap:wrap;
+gap:20px;
+padding:20px;
+justify-content:center;
+}
+
+/* BOOK CARD */
+
+.book{
+width:150px;
+position:relative;
+cursor:pointer;
+transition:transform 0.3s;
+}
+
+.book img{
+width:100%;
+border-radius:6px;
+}
+
+.book:hover{
+transform:scale(1.15);
+z-index:10;
+}
+
+/* BADGES */
+
+.badge{
+position:absolute;
+top:6px;
+left:6px;
+padding:3px 6px;
+font-size:11px;
+border-radius:4px;
+font-weight:bold;
+z-index:20;
+}
+
+.available{
+background:#2ecc71;
+color:black;
+}
+
+.unavailable{
+background:#e50914;
+color:white;
+}
+
+/* HOVER CARD */
+
+.hoverCard{
+position:absolute;
+left:-10px;
+right:-10px;
+bottom:-10px;
+background:#181818;
+padding:12px;
+border-radius:6px;
+opacity:0;
+transition:0.3s;
+box-shadow:0 10px 30px rgba(0,0,0,0.8);
+}
+
+.book:hover .hoverCard{
+opacity:1;
+}
+
+.readBtn{
+background:#e50914;
+border:none;
+color:white;
+padding:6px 12px;
+margin-top:6px;
+cursor:pointer;
+border-radius:3px;
+}
+
+/* READER */
+
+#reader{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:black;
+display:none;
+flex-direction:column;
+z-index:1000;
+}
+
+#reader iframe{
+flex:1;
+border:none;
+}
+
+#closeReader{
+background:#e50914;
+border:none;
+color:white;
+padding:12px;
+cursor:pointer;
+}
+
+/* FOOTER */
+
+footer{
+text-align:center;
+color:#888;
+padding:30px;
+font-size:12px;
+}
+
+/* MOBILE */
+
+@media (max-width:700px){
+.book{width:40%;}
+}
+
+@media (max-width:450px){
+.book{width:80%;}
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="loader">
+<div class="loaderB">B</div>
+</div>
+
+<div class="navbar">
+
+<div class="logo" onclick="goHome()">BOOKFLIX</div>
+
+<input id="searchBox" placeholder="Search books">
+
+<button onclick="searchBooks()">Search</button>
+
+</div>
+
+<div id="featured">
+
+<div id="featuredInfo">
+
+<h1 id="featuredTitle"></h1>
+
+<p id="featuredAuthor"></p>
+
+<button onclick="readFeatured()">READ</button>
+
+</div>
+
+</div>
+
+<h2 style="padding-left:20px;">Search Results</h2>
+<div id="searchResults"></div>
+
+<h2 style="padding-left:20px;">More Like This</h2>
+<div id="results"></div>
+
+<div id="reader">
+
+<button id="closeReader" onclick="closeReader()">Close</button>
+
+<iframe id="readerFrame"></iframe>
+
+</div>
+
+<footer>
+made by liam rodriguez
+</footer>
+
+<script>
 
 let featuredKey="";
-let featuredTitle="";
 
-/* ------------------------------
-   CREATE BOOK CARD
---------------------------------*/
+/* CREATE BOOK */
 
 function createBook(book,parent){
 
@@ -38,23 +283,9 @@ let cover = book.cover_i
 
 let author = book.author_name ? book.author_name[0] : "Unknown";
 
-let title = book.title || "Unknown";
+/* REAL availability check */
 
-/* check Gutenberg */
-
-let t = title.toLowerCase();
-let gutenbergLink=null;
-
-for(let g in gutenbergBooks){
-if(t.includes(g)){
-gutenbergLink=gutenbergBooks[g];
-break;
-}
-}
-
-/* availability */
-
-let available = gutenbergLink || book.has_fulltext;
+let available = book.has_fulltext === true;
 
 let badge = available
 ? '<div class="badge available">AVAILABLE</div>'
@@ -67,7 +298,7 @@ div.innerHTML=`
 ${badge}
 <img src="${cover}">
 <div class="hoverCard">
-<b>${title}</b><br>
+<b>${book.title}</b><br>
 ${author}<br>
 <button class="readBtn">READ</button>
 </div>
@@ -82,7 +313,7 @@ alert("This book cannot be read online.");
 return;
 }
 
-openReader(book.key,title);
+openReader(book.key);
 
 };
 
@@ -90,19 +321,17 @@ parent.appendChild(div);
 
 }
 
-/* ------------------------------
-   FEATURED BOOK
---------------------------------*/
+/* FEATURED */
 
 async function loadFeatured(){
 
-let res=await fetch("https://openlibrary.org/search.json?q=fantasy");
+let res=await fetch("https://openlibrary.org/search.json?q=fantasy&has_fulltext=true");
 
 let data=await res.json();
 
 let book=data.docs[0];
 
-if(!book) return;
+if(!book)return;
 
 let cover="https://covers.openlibrary.org/b/id/"+book.cover_i+"-L.jpg";
 
@@ -114,25 +343,20 @@ document.getElementById("featuredAuthor").innerText=
 book.author_name ? book.author_name[0] : "Unknown";
 
 featuredKey=book.key;
-featuredTitle=book.title;
 
 }
 
 function readFeatured(){
-openReader(featuredKey,featuredTitle);
+openReader(featuredKey);
 }
 
-/* ------------------------------
-   SEARCH
---------------------------------*/
+/* SEARCH */
 
 async function searchBooks(){
 
 document.getElementById("featured").style.display="none";
 
 let query=document.getElementById("searchBox").value;
-
-if(query==="") query="books";
 
 let res=await fetch(
 "https://openlibrary.org/search.json?q="+encodeURIComponent(query)
@@ -150,9 +374,7 @@ createBook(book,results);
 
 }
 
-/* ------------------------------
-   RECOMMENDATIONS
---------------------------------*/
+/* RECOMMENDATIONS */
 
 async function loadRecommendations(){
 
@@ -170,37 +392,14 @@ createBook(book,results);
 
 }
 
-/* ------------------------------
-   READER SYSTEM
---------------------------------*/
+/* READER */
 
-function openReader(key,title){
+function openReader(key){
 
-let reader=document.getElementById("reader");
+document.getElementById("reader").style.display="flex";
 
-let frame=document.getElementById("readerFrame");
-
-reader.style.display="flex";
-
-/* check Gutenberg first */
-
-let t=title.toLowerCase();
-
-for(let g in gutenbergBooks){
-
-if(t.includes(g)){
-
-frame.src=gutenbergBooks[g];
-
-return;
-
-}
-
-}
-
-/* fallback OpenLibrary embedded */
-
-frame.src="https://openlibrary.org"+key+"/embedded";
+document.getElementById("readerFrame").src=
+"https://openlibrary.org"+key+"/embedded";
 
 }
 
@@ -212,9 +411,7 @@ document.getElementById("readerFrame").src="";
 
 }
 
-/* ------------------------------
-   HOME BUTTON
---------------------------------*/
+/* HOME */
 
 function goHome(){
 
@@ -224,28 +421,29 @@ document.getElementById("searchResults").innerHTML="";
 
 }
 
-/* ------------------------------
-   ENTER KEY SEARCH
---------------------------------*/
+/* ENTER KEY SEARCH */
 
 document.getElementById("searchBox").addEventListener("keypress",function(e){
 
-if(e.key==="Enter") searchBooks();
+if(e.key==="Enter"){
+searchBooks();
+}
 
 });
 
-/* ------------------------------
-   INITIAL LOAD
---------------------------------*/
+/* LOAD PAGE */
 
 loadFeatured();
-
 loadRecommendations();
 
-/* loader */
+/* LOADER */
 
 setTimeout(()=>{
-
 document.getElementById("loader").classList.add("hide");
-
 },1500);
+
+</script>
+
+</body>
+
+</html>
