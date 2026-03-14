@@ -1,8 +1,10 @@
+
 <!DOCTYPE html>
 <html>
 
 <head>
 <title>BOOKFLIX</title>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -37,7 +39,7 @@ pointer-events:none;
 }
 
 .loaderB{
-font-size:140px;
+font-size:150px;
 color:#e50914;
 font-weight:bold;
 animation:glow 1.5s infinite alternate;
@@ -71,6 +73,8 @@ font-weight:bold;
 cursor:pointer;
 }
 
+/* SEARCH */
+
 input{
 padding:8px;
 border:none;
@@ -95,7 +99,7 @@ border-radius:6px;
 max-width:400px;
 }
 
-/* BOOK GRID */
+/* GRID */
 
 #results,#searchResults{
 display:flex;
@@ -242,15 +246,20 @@ align-items:flex-start;
 <div class="logo" onclick="goHome()">BOOKFLIX</div>
 
 <input id="searchBox" placeholder="Search books...">
+
 <button onclick="searchBooks()">Search</button>
 
 </div>
 
 <div id="featured">
 <div id="featuredInfo">
+
 <h1 id="featuredTitle"></h1>
+
 <p id="featuredAuthor"></p>
+
 <button onclick="readFeatured()">READ</button>
+
 </div>
 </div>
 
@@ -261,8 +270,11 @@ align-items:flex-start;
 <div id="results"></div>
 
 <div id="reader">
+
 <button id="closeReader" onclick="closeReader()">Close Reader</button>
+
 <iframe id="readerFrame"></iframe>
+
 </div>
 
 <footer>
@@ -271,7 +283,7 @@ made by liam rodriguez
 
 <script>
 
-let featuredBookKey="";
+let featuredIA="";
 
 /* CREATE BOOK */
 
@@ -283,11 +295,9 @@ let cover = book.cover_i
 
 let author = book.author_name ? book.author_name[0] : "Unknown";
 
-let edition = book.edition_key ? book.edition_key[0] : null;
+let ia = book.ia ? book.ia[0] : null;
 
-/* availability using ebook_access */
-
-let available = book.ebook_access !== "no_ebook";
+let available = ia != null;
 
 let badge = available
 ? '<div class="badge available">AVAILABLE</div>'
@@ -310,8 +320,8 @@ div.querySelector(".readBtn").onclick=(e)=>{
 
 e.stopPropagation();
 
-if(edition){
-openReader(edition);
+if(ia){
+openReader(ia);
 }else{
 alert("Reader not available for this book.");
 }
@@ -326,7 +336,7 @@ parent.appendChild(div);
 
 async function loadFeatured(){
 
-let res=await fetch("https://openlibrary.org/search.json?q=fantasy");
+let res=await fetch("https://openlibrary.org/search.json?q=fantasy&has_fulltext=true");
 
 let data=await res.json();
 
@@ -343,14 +353,16 @@ document.getElementById("featuredTitle").innerText=book.title;
 document.getElementById("featuredAuthor").innerText=
 book.author_name ? book.author_name[0] : "Unknown";
 
-featuredBookKey = book.edition_key ? book.edition_key[0] : null;
+featuredIA = book.ia ? book.ia[0] : null;
 
 }
 
 function readFeatured(){
-if(featuredBookKey){
-openReader(featuredBookKey);
+
+if(featuredIA){
+openReader(featuredIA);
 }
+
 }
 
 /* SEARCH */
@@ -361,9 +373,11 @@ document.getElementById("featured").style.display="none";
 
 let query=document.getElementById("searchBox").value;
 
-if(query===""){query="fantasy";}
+if(query===""){query="books";}
 
-let res=await fetch("https://openlibrary.org/search.json?q="+encodeURIComponent(query));
+let res=await fetch(
+"https://openlibrary.org/search.json?q="+encodeURIComponent(query)+"&has_fulltext=true"
+);
 
 let data=await res.json();
 
@@ -381,7 +395,9 @@ createBook(book,results);
 
 async function loadRecommendations(){
 
-let res=await fetch("https://openlibrary.org/search.json?q=classic");
+let res=await fetch(
+"https://openlibrary.org/search.json?q=classic&has_fulltext=true"
+);
 
 let data=await res.json();
 
@@ -397,18 +413,19 @@ createBook(book,results);
 
 /* READER */
 
-function openReader(edition){
+function openReader(ia){
 
 document.getElementById("reader").style.display="flex";
 
 document.getElementById("readerFrame").src=
-"https://openlibrary.org/books/"+edition+"/embed";
+"https://archive.org/stream/"+ia+"/page/n1/mode/2up";
 
 }
 
 function closeReader(){
 
 document.getElementById("reader").style.display="none";
+
 document.getElementById("readerFrame").src="";
 
 }
@@ -418,6 +435,7 @@ document.getElementById("readerFrame").src="";
 function goHome(){
 
 document.getElementById("featured").style.display="flex";
+
 document.getElementById("searchResults").innerHTML="";
 
 }
@@ -425,23 +443,32 @@ document.getElementById("searchResults").innerHTML="";
 /* ENTER KEY SEARCH */
 
 document.getElementById("searchBox").addEventListener("keypress",function(e){
+
 if(e.key==="Enter"){
+
 searchBooks();
+
 }
+
 });
 
-/* PAGE LOAD */
+/* LOAD PAGE */
 
 loadFeatured();
+
 loadRecommendations();
 
 /* LOADER */
 
 setTimeout(()=>{
+
 document.getElementById("loader").classList.add("hide");
+
 },1500);
 
 </script>
 
 </body>
+
 </html>
+
