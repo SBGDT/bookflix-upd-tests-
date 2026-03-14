@@ -26,7 +26,6 @@ width:100%;
 height:100%;
 background:black;
 display:flex;
-flex-direction:column;
 justify-content:center;
 align-items:center;
 z-index:9999;
@@ -39,7 +38,7 @@ pointer-events:none;
 }
 
 .loaderB{
-font-size:150px;
+font-size:140px;
 color:#e50914;
 font-weight:bold;
 animation:glow 1.5s infinite alternate;
@@ -94,7 +93,7 @@ border-radius:6px;
 max-width:400px;
 }
 
-/* BOOK GRID */
+/* GRID */
 
 #results,#searchResults{
 display:flex;
@@ -123,7 +122,7 @@ transform:scale(1.15);
 z-index:10;
 }
 
-/* BADGES */
+/* BADGE */
 
 .badge{
 position:absolute;
@@ -133,17 +132,8 @@ padding:3px 6px;
 font-size:11px;
 border-radius:4px;
 font-weight:bold;
-z-index:20;
-}
-
-.available{
 background:#2ecc71;
 color:black;
-}
-
-.unavailable{
-background:#e50914;
-color:white;
 }
 
 /* HOVER CARD */
@@ -192,15 +182,6 @@ z-index:1000;
 #reader iframe{
 flex:1;
 border:none;
-}
-
-#readerText{
-flex:1;
-overflow:auto;
-padding:40px;
-line-height:1.6;
-font-size:18px;
-background:#111;
 }
 
 #closeReader{
@@ -266,7 +247,7 @@ font-size:12px;
 <h2 style="padding-left:20px;">Search Results</h2>
 <div id="searchResults"></div>
 
-<h2 style="padding-left:20px;">More Like This</h2>
+<h2 style="padding-left:20px;">Library</h2>
 <div id="results"></div>
 
 <div id="reader">
@@ -274,8 +255,6 @@ font-size:12px;
 <button id="closeReader" onclick="closeReader()">Close</button>
 
 <iframe id="readerFrame"></iframe>
-
-<div id="readerText" style="display:none"></div>
 
 </div>
 
@@ -285,44 +264,87 @@ made by liam rodriguez
 
 <script>
 
-let featuredEmbed="";
+/* BOOKFLIX LIBRARY (GUTENBERG) */
+
+const books=[
+
+{
+title:"Dracula",
+author:"Bram Stoker",
+cover:"https://covers.openlibrary.org/b/id/8231996-L.jpg",
+url:"https://www.gutenberg.org/files/345/345-h/345-h.htm"
+},
+
+{
+title:"Frankenstein",
+author:"Mary Shelley",
+cover:"https://covers.openlibrary.org/b/id/8231856-L.jpg",
+url:"https://www.gutenberg.org/files/84/84-h/84-h.htm"
+},
+
+{
+title:"Treasure Island",
+author:"Robert Louis Stevenson",
+cover:"https://covers.openlibrary.org/b/id/8231980-L.jpg",
+url:"https://www.gutenberg.org/files/120/120-h/120-h.htm"
+},
+
+{
+title:"White Fang",
+author:"Jack London",
+cover:"https://covers.openlibrary.org/b/id/8226191-L.jpg",
+url:"https://www.gutenberg.org/files/910/910-h/910-h.htm"
+},
+
+{
+title:"Sherlock Holmes",
+author:"Arthur Conan Doyle",
+cover:"https://covers.openlibrary.org/b/id/8221256-L.jpg",
+url:"https://www.gutenberg.org/files/1661/1661-h/1661-h.htm"
+},
+
+{
+title:"Alice in Wonderland",
+author:"Lewis Carroll",
+cover:"https://covers.openlibrary.org/b/id/8228691-L.jpg",
+url:"https://www.gutenberg.org/files/11/11-h/11-h.htm"
+}
+
+]
+
+let featuredBook=books[0];
 
 /* CREATE BOOK */
 
 function createBook(book,parent){
 
-let cover = book.cover_i
-? "https://covers.openlibrary.org/b/id/"+book.cover_i+"-M.jpg"
-: "https://via.placeholder.com/150x220?text=Book";
-
-let author = book.author_name ? book.author_name[0] : "Unknown";
-
-let embed = book.key;
-
-let available = embed!=null;
-
-let badge = available
-? '<div class="badge available">AVAILABLE</div>'
-: '<div class="badge unavailable">UNAVAILABLE</div>';
-
 let div=document.createElement("div");
+
 div.className="book";
 
 div.innerHTML=`
-${badge}
-<img src="${cover}">
+
+<div class="badge">AVAILABLE</div>
+
+<img src="${book.cover}">
+
 <div class="hoverCard">
+
 <b>${book.title}</b><br>
-${author}<br>
+
+${book.author}<br>
+
 <button class="readBtn">READ</button>
+
 </div>
+
 `;
 
 div.querySelector(".readBtn").onclick=(e)=>{
 
 e.stopPropagation();
 
-openReader(embed,book.title,author);
+openReader(book.url);
 
 };
 
@@ -330,89 +352,62 @@ parent.appendChild(div);
 
 }
 
-/* FEATURED */
+/* LOAD LIBRARY */
 
-async function loadFeatured(){
-
-let res=await fetch("https://openlibrary.org/search.json?q=fantasy");
-
-let data=await res.json();
-
-let book=data.docs[0];
-
-let cover="https://covers.openlibrary.org/b/id/"+book.cover_i+"-L.jpg";
-
-document.getElementById("featured").style.backgroundImage="url("+cover+")";
-
-document.getElementById("featuredTitle").innerText=book.title;
-
-document.getElementById("featuredAuthor").innerText=
-book.author_name ? book.author_name[0] : "Unknown";
-
-featuredEmbed=book.key;
-
-}
-
-function readFeatured(){
-
-openReader(featuredEmbed);
-
-}
-
-/* SEARCH */
-
-async function searchBooks(){
-
-document.getElementById("featured").style.display="none";
-
-let query=document.getElementById("searchBox").value;
-
-let res=await fetch(
-"https://openlibrary.org/search.json?q="+encodeURIComponent(query)
-);
-
-let data=await res.json();
-
-let results=document.getElementById("searchResults");
-
-results.innerHTML="";
-
-data.docs.slice(0,20).forEach(book=>{
-createBook(book,results);
-});
-
-}
-
-/* RECOMMENDATIONS */
-
-async function loadRecommendations(){
-
-let res=await fetch("https://openlibrary.org/search.json?q=classic");
-
-let data=await res.json();
+function loadLibrary(){
 
 let results=document.getElementById("results");
 
 results.innerHTML="";
 
-data.docs.slice(0,20).forEach(book=>{
-createBook(book,results);
-});
+books.forEach(book=>createBook(book,results));
+
+}
+
+/* FEATURED */
+
+function loadFeatured(){
+
+document.getElementById("featured").style.backgroundImage=
+"url("+featuredBook.cover+")";
+
+document.getElementById("featuredTitle").innerText=featuredBook.title;
+
+document.getElementById("featuredAuthor").innerText=featuredBook.author;
+
+}
+
+function readFeatured(){
+
+openReader(featuredBook.url);
+
+}
+
+/* SEARCH */
+
+function searchBooks(){
+
+let query=document.getElementById("searchBox").value.toLowerCase();
+
+let results=document.getElementById("searchResults");
+
+results.innerHTML="";
+
+books
+.filter(book=>book.title.toLowerCase().includes(query))
+.forEach(book=>createBook(book,results));
+
+document.getElementById("featured").style.display="none";
 
 }
 
 /* READER */
 
-function openReader(key,title,author){
+function openReader(url){
 
 document.getElementById("reader").style.display="flex";
 
-document.getElementById("readerFrame").style.display="block";
-
-document.getElementById("readerText").style.display="none";
-
-document.getElementById("readerFrame").src=
-"https://openlibrary.org"+key+"/embedded";
+document.getElementById("readerFrame").src=url;
 
 }
 
@@ -434,20 +429,19 @@ document.getElementById("searchResults").innerHTML="";
 
 }
 
-/* ENTER KEY SEARCH */
+/* ENTER SEARCH */
 
 document.getElementById("searchBox").addEventListener("keypress",function(e){
 
-if(e.key==="Enter"){
-searchBooks();
-}
+if(e.key==="Enter"){searchBooks();}
 
 });
 
-/* LOAD PAGE */
+/* START */
+
+loadLibrary();
 
 loadFeatured();
-loadRecommendations();
 
 /* LOADER */
 
@@ -462,3 +456,4 @@ document.getElementById("loader").classList.add("hide");
 </body>
 
 </html>
+
