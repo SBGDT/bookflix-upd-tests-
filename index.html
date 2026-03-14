@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 
@@ -50,14 +49,8 @@ margin-top:10px;
 }
 
 @keyframes glow{
-from{
-transform:scale(1);
-text-shadow:0 0 10px #e50914;
-}
-to{
-transform:scale(1.2);
-text-shadow:0 0 50px #e50914;
-}
+from{transform:scale(1);}
+to{transform:scale(1.2);}
 }
 
 /* NAVBAR */
@@ -126,7 +119,12 @@ width:100%;
 border-radius:6px;
 }
 
-/* BADGE */
+.book:hover{
+transform:scale(1.15);
+z-index:10;
+}
+
+/* BADGES */
 
 .badge{
 position:absolute;
@@ -149,7 +147,7 @@ background:#e50914;
 color:white;
 }
 
-/* HOVER EXPANSION */
+/* HOVER CARD */
 
 .hoverCard{
 position:absolute;
@@ -160,20 +158,12 @@ background:#181818;
 padding:12px;
 border-radius:6px;
 opacity:0;
-transform:translateY(10px);
 transition:0.3s;
 box-shadow:0 10px 30px rgba(0,0,0,0.8);
-z-index:5;
-}
-
-.book:hover{
-transform:scale(1.15);
-z-index:10;
 }
 
 .book:hover .hoverCard{
 opacity:1;
-transform:translateY(0);
 }
 
 .readBtn{
@@ -301,16 +291,17 @@ let author = book.author_name ? book.author_name[0] : "Unknown";
 
 let edition = book.edition_key ? book.edition_key[0] : null;
 
-let available = book.has_fulltext;
+let available = book.edition_key && book.has_fulltext;
 
-let status = available ? "AVAILABLE" : "UNAVAILABLE";
-let badgeClass = available ? "available" : "unavailable";
+let badge = available
+? '<div class="badge available">AVAILABLE</div>'
+: '<div class="badge unavailable">UNAVAILABLE</div>';
 
 let div=document.createElement("div");
 div.className="book";
 
 div.innerHTML=`
-<div class="badge ${badgeClass}">${status}</div>
+${badge}
 <img src="${cover}">
 <div class="hoverCard">
 <b>${book.title}</b><br>
@@ -320,12 +311,13 @@ ${author}<br>
 `;
 
 div.querySelector(".readBtn").onclick=(e)=>{
+
 e.stopPropagation();
 
-if(available && edition){
+if(available){
 openReader(edition);
 }else{
-alert("This book is not available to read.");
+alert("This book cannot be read online.");
 }
 
 };
@@ -338,17 +330,13 @@ parent.appendChild(div);
 
 async function loadFeatured(){
 
-let res=await fetch("https://openlibrary.org/search.json?q=fantasy");
+let res=await fetch("https://openlibrary.org/search.json?q=fantasy&has_fulltext=true");
 
 let data=await res.json();
 
 let book=data.docs[0];
 
-if(!book) return;
-
-let cover=book.cover_i
-? "https://covers.openlibrary.org/b/id/"+book.cover_i+"-L.jpg"
-: "";
+let cover="https://covers.openlibrary.org/b/id/"+book.cover_i+"-L.jpg";
 
 document.getElementById("featured").style.backgroundImage="url("+cover+")";
 
@@ -357,16 +345,12 @@ document.getElementById("featuredTitle").innerText=book.title;
 document.getElementById("featuredAuthor").innerText=
 book.author_name ? book.author_name[0] : "Unknown";
 
-featuredBookKey = book.edition_key ? book.edition_key[0] : "";
+featuredBookKey = book.edition_key[0];
 
 }
 
 function readFeatured(){
-
-if(featuredBookKey){
 openReader(featuredBookKey);
-}
-
 }
 
 /* SEARCH */
@@ -379,7 +363,7 @@ let query=document.getElementById("searchBox").value;
 
 if(query===""){query="fantasy";}
 
-let res=await fetch("https://openlibrary.org/search.json?q="+encodeURIComponent(query));
+let res=await fetch("https://openlibrary.org/search.json?q="+encodeURIComponent(query)+"&has_fulltext=true");
 
 let data=await res.json();
 
@@ -397,7 +381,7 @@ createBook(book,results);
 
 async function loadRecommendations(){
 
-let res=await fetch("https://openlibrary.org/search.json?q=classic");
+let res=await fetch("https://openlibrary.org/search.json?q=classic&has_fulltext=true");
 
 let data=await res.json();
 
@@ -434,6 +418,7 @@ document.getElementById("readerFrame").src="";
 function goHome(){
 
 document.getElementById("featured").style.display="flex";
+
 document.getElementById("searchResults").innerHTML="";
 
 }
