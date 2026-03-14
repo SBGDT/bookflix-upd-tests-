@@ -45,11 +45,6 @@ font-weight:bold;
 animation:glow 1.5s infinite alternate;
 }
 
-.loaderText{
-letter-spacing:6px;
-margin-top:10px;
-}
-
 @keyframes glow{
 from{transform:scale(1);}
 to{transform:scale(1.2);}
@@ -99,7 +94,7 @@ border-radius:6px;
 max-width:400px;
 }
 
-/* GRID */
+/* BOOK GRID */
 
 #results,#searchResults{
 display:flex;
@@ -199,6 +194,15 @@ flex:1;
 border:none;
 }
 
+#readerText{
+flex:1;
+overflow:auto;
+padding:40px;
+line-height:1.6;
+font-size:18px;
+background:#111;
+}
+
 #closeReader{
 background:#e50914;
 border:none;
@@ -220,15 +224,10 @@ font-size:12px;
 
 @media (max-width:700px){
 .book{width:40%;}
-#featured{padding:20px;}
 }
 
 @media (max-width:450px){
 .book{width:80%;}
-.navbar{
-flex-direction:column;
-align-items:flex-start;
-}
 }
 
 </style>
@@ -238,20 +237,20 @@ align-items:flex-start;
 
 <div id="loader">
 <div class="loaderB">B</div>
-<div class="loaderText">BOOKFLIX</div>
 </div>
 
 <div class="navbar">
 
 <div class="logo" onclick="goHome()">BOOKFLIX</div>
 
-<input id="searchBox" placeholder="Search books...">
+<input id="searchBox" placeholder="Search books">
 
 <button onclick="searchBooks()">Search</button>
 
 </div>
 
 <div id="featured">
+
 <div id="featuredInfo">
 
 <h1 id="featuredTitle"></h1>
@@ -261,6 +260,7 @@ align-items:flex-start;
 <button onclick="readFeatured()">READ</button>
 
 </div>
+
 </div>
 
 <h2 style="padding-left:20px;">Search Results</h2>
@@ -271,9 +271,11 @@ align-items:flex-start;
 
 <div id="reader">
 
-<button id="closeReader" onclick="closeReader()">Close Reader</button>
+<button id="closeReader" onclick="closeReader()">Close</button>
 
 <iframe id="readerFrame"></iframe>
+
+<div id="readerText" style="display:none"></div>
 
 </div>
 
@@ -283,7 +285,7 @@ made by liam rodriguez
 
 <script>
 
-let featuredIA="";
+let featuredEmbed="";
 
 /* CREATE BOOK */
 
@@ -295,11 +297,9 @@ let cover = book.cover_i
 
 let author = book.author_name ? book.author_name[0] : "Unknown";
 
-let ia = book.ia ? book.ia[0] : null;
+let embed = book.key;
 
-/* NEW AVAILABILITY CHECK */
-
-let available = ia && book.lending_edition_s;
+let available = embed!=null;
 
 let badge = available
 ? '<div class="badge available">AVAILABLE</div>'
@@ -322,11 +322,7 @@ div.querySelector(".readBtn").onclick=(e)=>{
 
 e.stopPropagation();
 
-if(available){
-openReader(ia);
-}else{
-alert("This book cannot be read online.");
-}
+openReader(embed,book.title,author);
 
 };
 
@@ -338,13 +334,11 @@ parent.appendChild(div);
 
 async function loadFeatured(){
 
-let res=await fetch("https://openlibrary.org/search.json?q=fantasy&has_fulltext=true");
+let res=await fetch("https://openlibrary.org/search.json?q=fantasy");
 
 let data=await res.json();
 
-let book=data.docs.find(b=>b.ia && b.lending_edition_s);
-
-if(!book)return;
+let book=data.docs[0];
 
 let cover="https://covers.openlibrary.org/b/id/"+book.cover_i+"-L.jpg";
 
@@ -355,15 +349,13 @@ document.getElementById("featuredTitle").innerText=book.title;
 document.getElementById("featuredAuthor").innerText=
 book.author_name ? book.author_name[0] : "Unknown";
 
-featuredIA = book.ia[0];
+featuredEmbed=book.key;
 
 }
 
 function readFeatured(){
 
-if(featuredIA){
-openReader(featuredIA);
-}
+openReader(featuredEmbed);
 
 }
 
@@ -375,10 +367,8 @@ document.getElementById("featured").style.display="none";
 
 let query=document.getElementById("searchBox").value;
 
-if(query===""){query="books";}
-
 let res=await fetch(
-"https://openlibrary.org/search.json?q="+encodeURIComponent(query)+"&has_fulltext=true"
+"https://openlibrary.org/search.json?q="+encodeURIComponent(query)
 );
 
 let data=await res.json();
@@ -397,9 +387,7 @@ createBook(book,results);
 
 async function loadRecommendations(){
 
-let res=await fetch(
-"https://openlibrary.org/search.json?q=classic&has_fulltext=true"
-);
+let res=await fetch("https://openlibrary.org/search.json?q=classic");
 
 let data=await res.json();
 
@@ -415,12 +403,16 @@ createBook(book,results);
 
 /* READER */
 
-function openReader(ia){
+function openReader(key,title,author){
 
 document.getElementById("reader").style.display="flex";
 
+document.getElementById("readerFrame").style.display="block";
+
+document.getElementById("readerText").style.display="none";
+
 document.getElementById("readerFrame").src=
-"https://archive.org/details/"+ia+"/page/n1/mode/2up";
+"https://openlibrary.org"+key+"/embedded";
 
 }
 
@@ -460,7 +452,9 @@ loadRecommendations();
 /* LOADER */
 
 setTimeout(()=>{
+
 document.getElementById("loader").classList.add("hide");
+
 },1500);
 
 </script>
